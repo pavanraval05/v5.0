@@ -51,6 +51,7 @@ contract NFTDutchAuction_ERC20Bids is Initializable, OwnableUpgradeable, UUPSUpg
     string public upgradeNumber;
 
     function initialize(
+        string memory _upgradeNumber,
         address erc20TokenAddress,
         address erc721TokenAddress,
         uint256 _nftTokenId,
@@ -60,7 +61,7 @@ contract NFTDutchAuction_ERC20Bids is Initializable, OwnableUpgradeable, UUPSUpg
     ) public initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
-
+        upgradeNumber = _upgradeNumber;
         _transferOwnership(msg.sender);
         nfterc721Reference = IERC721(erc721TokenAddress);
         erc20TokenReference = IERC20Permit(erc20TokenAddress);
@@ -104,7 +105,7 @@ contract NFTDutchAuction_ERC20Bids is Initializable, OwnableUpgradeable, UUPSUpg
         require(bidAmount >= currentPrice, "The bid amount sent is too low");
 
         require(
-            bidAmount <= erc20TokenReference.allowance(owner(), address(this)),
+            bidAmount <= erc20TokenReference.allowance(msg.sender, address(this)),
             "Bid amount accepted, but bid failed because not enough balance to transfer erc20 token"
         );
 
@@ -112,6 +113,9 @@ contract NFTDutchAuction_ERC20Bids is Initializable, OwnableUpgradeable, UUPSUpg
         erc20TokenReference.transferFrom(msg.sender, owner(), bidAmount);
         auctionEnded = true;
         return msg.sender;
+    }
+     function getMessage() public view returns (string memory) {
+        return upgradeNumber;
     }
 }
 
