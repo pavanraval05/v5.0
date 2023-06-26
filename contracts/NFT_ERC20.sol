@@ -114,8 +114,30 @@ contract NFTDutchAuction_ERC20Bids is Initializable, OwnableUpgradeable, UUPSUpg
         auctionEnded = true;
         return msg.sender;
     }
-     function getMessage() public view returns (string memory) {
+    function getMessage() public view returns (string memory) {
         return upgradeNumber;
+    }
+
+    function bidvrs(uint256 amount, bool isOffChain, uint8 v, bytes32 r, bytes32 s, uint256 deadline)
+    public 
+    payable
+    {
+        require(auctionEnded == false, "Auction has already ended!");
+        require((block.number - startAtBlockNumber) <= numBlocksAuctionOpen, "Auction Ended");
+        uint256 blocks = block.number - startAtBlockNumber;
+        uint256 currentPrice = initialPrice - (blocks * offerPriceDecrement - 1);
+        require(amount >= currentPrice, "The bid amount sent is too low");
+        finalize(amount, isOffChain, v, r, s, deadline);
+    }
+
+    function finalize(uint256 amount, bool isOffChain, uint8 v, bytes32 r, bytes32 s, uint256 deadline) 
+    internal 
+    {
+        require(erc20TokenReference.allowance(msg.sender, address(this)) >= amount, "Insufficient Token Allowance.");
+        require(erc20TokenReference.balanceOf(msg.sender) >= amount, "Not enough balance in the wallet.");
+        erc20TokenReference.transferFrom(msg.sender, owner(), amount);
+        nfterc721Reference.safeTransferFrom(owner(), msg.sender, nftTokenId);
+        auctionEnded = true;
     }
 }
 
